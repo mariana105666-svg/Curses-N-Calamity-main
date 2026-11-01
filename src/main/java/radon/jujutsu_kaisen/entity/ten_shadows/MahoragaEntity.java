@@ -1,0 +1,371 @@
+package radon.jujutsu_kaisen.entity.ten_shadows;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import radon.jujutsu_kaisen.damage.JJKDamageSources;
+import net.minecraft.world.level.Level;
+import radon.jujutsu_kaisen.ability.JJKAbilities;
+import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.control.MoveControl;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
+import radon.jujutsu_kaisen.ability.base.Ability;
+import radon.jujutsu_kaisen.ability.base.Summon;
+import radon.jujutsu_kaisen.capability.data.sorcerer.ISorcererData;
+import radon.jujutsu_kaisen.capability.data.sorcerer.SorcererDataHandler;
+import radon.jujutsu_kaisen.capability.data.sorcerer.JujutsuType;
+import radon.jujutsu_kaisen.capability.data.sorcerer.SorcererGrade;
+import radon.jujutsu_kaisen.capability.data.ten_shadows.ITenShadowsData;
+import radon.jujutsu_kaisen.capability.data.ten_shadows.TenShadowsDataHandler;
+import radon.jujutsu_kaisen.entity.JJKEntities;
+import radon.jujutsu_kaisen.ExplosionHandler;
+import radon.jujutsu_kaisen.entity.sorcerer.base.SorcererEntity;
+import radon.jujutsu_kaisen.entity.ten_shadows.base.TenShadowsSummon;
+import radon.jujutsu_kaisen.sound.JJKSounds;
+import radon.jujutsu_kaisen.util.RotationUtil;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+
+import java.util.List;
+
+public class MahoragaEntity extends TenShadowsSummon {
+    public static EntityDataAccessor<Integer> DATA_SLASH = SynchedEntityData.defineId(MahoragaEntity.class, EntityDataSerializers.INT);
+    public static EntityDataAccessor<Boolean> DATA_BATTLE = SynchedEntityData.defineId(MahoragaEntity.class, EntityDataSerializers.BOOLEAN);
+
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("misc.idle");
+    private static final RawAnimation IDLE_BATTLE = RawAnimation.begin().thenLoop("misc.idle_battle");
+    private static final RawAnimation WALK = RawAnimation.begin().thenLoop("move.walk");
+    private static final RawAnimation RUN = RawAnimation.begin().thenLoop("move.run");
+    private static final RawAnimation SWING = RawAnimation.begin().thenPlay("attack.swing");
+    private static final RawAnimation SLASH = RawAnimation.begin().thenPlay("attack.slash");
+
+    private static final double SLASH_LAUNCH = 30.0D;
+    private static final float SLASH_EXPLOSION = 5.0F;
+    private static final float SLASH_DAMAGE = 15.0F;
+
+    private static final int SLASH_DURATION = 20;
+    private static final int RITUAL_DURATION = 3 * 20;
+
+    private boolean healing;
+
+    public MahoragaEntity(EntityType<? extends TamableAnimal> pType, Level pLevel) {
+        super(pType, pLevel);
+    }
+
+    public MahoragaEntity(LivingEntity owner, boolean tame) {
+        this(JJKEntities.MAHORAGA.get(), owner.level());
+
+        this.setTame(tame);
+        this.setOwner(owner);
+
+        Vec3 direction = RotationUtil.calculateViewVector(0.0F, owner.getYRot());
+        Vec3 pos = owner.position()
+                .subtract(direction.multiply(this.getBbWidth(), 0.0D, this.getBbWidth()));
+        this.moveTo(pos.x, pos.y, pos.z, owner.getYRot(), owner.getXRot());
+
+        this.yHeadRot = this.getYRot();
+        this.yHeadRotO = this.yHeadRot;
+
+        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
+        this.moveControl = new MoveControl(this);
+    }
+
+    @Override
+    public boolean hurt(@NotNull DamageSource pSource, float pAmount) {
+        if (!this.isTame() && this.getTime() <= RITUAL_DURATION) return false;
+        return super.hurt(pSource, pAmount);
+    }
+
+    @Override
+    public boolean isNoAi() {
+        return (!this.isTame() && this.getTime() <= RITUAL_DURATION) || super.isNoAi();
+    }
+
+    @Override
+    public double getPassengersRidingOffset() {
+        return this.getBbHeight() - 0.35D;
+    }
+
+    @Override
+    protected boolean isCustom() {
+        return false;
+    }
+
+    @Override
+    protected boolean canFly() {
+        return false;
+    }
+
+    @Override
+    public boolean hasMeleeAttack() {
+        return true;
+    }
+
+    @Override
+    public boolean hasArms() {
+        return true;
+    }
+
+    @Override
+    public boolean canJump() {
+        return true;
+    }
+
+    @Override
+    public boolean canChant() {
+        return false;
+    }
+
+    @Override
+    public float getStepHeight() {
+        return 4.0F;
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return SorcererEntity.createAttributes()
+                .add(Attributes.MAX_HEALTH, 3 * 10.0D)
+                .add(Attributes.ARMOR, 20.0D)
+                .add(Attributes.ATTACK_DAMAGE, 10 * 4.0D);
+    }
+
+    @Override
+    protected @NotNull PathNavigation createNavigation(@NotNull Level pLevel) {
+        LivingEntity target = this.getTarget();
+        GroundPathNavigation navigation = new GroundPathNavigation(this, pLevel);
+        navigation.setCanOpenDoors(false);
+        navigation.setCanFloat(false);
+        navigation.setCanPassDoors(true);
+        return navigation;
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+
+        this.entityData.define(DATA_SLASH, 0);
+        this.entityData.define(DATA_BATTLE, false);
+    }
+
+    private PlayState walkRunIdlePredicate(AnimationState<MahoragaEntity> animationState) {
+        if (animationState.isMoving()) {
+            return animationState.setAndContinue(this.isSprinting() ? RUN : WALK);
+        } else {
+            return animationState.setAndContinue(this.entityData.get(DATA_BATTLE) ? IDLE_BATTLE : IDLE);
+        }
+    }
+
+    private PlayState swingPredicate(AnimationState<MahoragaEntity> animationState) {
+        if (this.swinging) {
+            return animationState.setAndContinue(SWING);
+        }
+        animationState.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
+    private PlayState slashPredicate(AnimationState<MahoragaEntity> animationState) {
+        int slash = this.entityData.get(DATA_SLASH);
+
+        if (slash > 0) {
+            return animationState.setAndContinue(SLASH);
+        }
+        animationState.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+        controllerRegistrar.add(new AnimationController<>(this, "Walk/Run/Idle", this::walkRunIdlePredicate));
+        controllerRegistrar.add(new AnimationController<>(this, "Swing", this::swingPredicate));
+        controllerRegistrar.add(new AnimationController<>(this, "Slash", this::slashPredicate));
+    }
+
+    @Override
+    public boolean doHurtTarget(@NotNull Entity pEntity) {
+        boolean result = super.doHurtTarget(pEntity);
+
+        if (result) {
+            if (!(pEntity instanceof LivingEntity living)) return true;
+
+            if (!pEntity.getCapability(SorcererDataHandler.INSTANCE).isPresent()) return true;
+            ISorcererData cap = pEntity.getCapability(SorcererDataHandler.INSTANCE).resolve().orElseThrow();
+
+            if (cap.getType() == JujutsuType.CURSE) {
+                pEntity.hurt(this.damageSources().mobAttack(this), living.getMaxHealth()* 0.5F);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+
+        LivingEntity target = this.getTarget();
+
+        this.entityData.set(DATA_BATTLE, target != null);
+
+        int slash = this.entityData.get(DATA_SLASH);
+
+        if (slash > 0) {
+            this.entityData.set(DATA_SLASH, --slash);
+        } else {
+            if (target != null) {
+                this.moveControl.setWantedPosition(target.getX(), target.getY(), target.getZ(), 0.8f);
+                if (this.onGround() && this.distanceTo(target) < 3.0D) {
+
+                    if (this.doHurtTarget(target)) {
+                        this.entityData.set(DATA_SLASH, SLASH_DURATION);
+
+                        target.setDeltaMovement(RotationUtil.getTargetAdjustedLookAngle(this).scale(SLASH_LAUNCH));
+                        target.hurtMarked = true;
+
+                        Vec3 center = target.position().add(0.0D, target.getBbHeight() / 2, 0.0D);
+                        ((ServerLevel) this.level()).sendParticles(ParticleTypes.EXPLOSION, center.x, center.y, center.z, 0, 1.0D, 0.0D, 0.0D, 1.0D);
+                        this.level().playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE, SoundSource.MASTER, 1.0F, 1.0F);
+                    }
+                }
+                // if (this.onGround() && this.distanceTo(target) < 5.0D) {
+                //     this.entityData.set(DATA_SLASH, SLASH_DURATION);
+
+                //     target.setDeltaMovement(RotationUtil.getTargetAdjustedLookAngle(this).scale(SLASH_LAUNCH));
+                //     target.hurtMarked = true;
+
+                //     Vec3 explosionPos = new Vec3(this.getX(), this.getEyeY() - 0.2D, this.getZ()).add(RotationUtil.getTargetAdjustedLookAngle(this));
+                //     ExplosionHandler.spawn(this.level().dimension(), explosionPos, SLASH_EXPLOSION,
+                //             20, SLASH_DAMAGE * 0.25f, this,  JJKDamageSources.indirectJujutsuAttack(this, this, JJKAbilities.DISMANTLE.get()), false);
+                    
+                // }
+            }
+        }
+     }
+
+     private void setRitualOffset(Mob entity, int index, double padding) {
+         entity.setNoAi(true);
+
+         double x = entity.getX();
+         double y = entity.getY();
+         double z = entity.getZ();
+
+         double distance = entity.getBbWidth() * 2;
+         Vec3 look = RotationUtil.calculateViewVector(0.0F, entity.getYRot());
+         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+         Vec3 side = look.cross(up);
+         Vec3 offset = side.scale(distance * (index < 3 ? 1 : -1))
+                 .add(look.scale(padding + (index % 3) * 3.0D));
+         entity.setPos(x + offset.x, y, z + offset.z);
+
+         float yRot = entity.getYRot();
+
+         if (index < 3) {
+             yRot -= 90.0F;
+         } else {
+             yRot += 90.0F;
+         }
+         entity.setYRot(yRot);
+         entity.yHeadRot = entity.getYRot();
+         entity.yHeadRotO = entity.yHeadRot;
+     }
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+
+        if (this.isTame()) {
+            LivingEntity owner = this.getOwner();
+
+            if (owner != null) {
+                if (!owner.getCapability(TenShadowsDataHandler.INSTANCE).isPresent()) return;
+
+                ITenShadowsData src = owner.getCapability(TenShadowsDataHandler.INSTANCE).resolve().orElseThrow();
+                ITenShadowsData dst = this.getCapability(TenShadowsDataHandler.INSTANCE).resolve().orElseThrow();
+
+                dst.addAdapted(src.getAdapted());
+                dst.addAdapting(src.getAdapting());
+            }
+        } else {
+            this.playSound(JJKSounds.WOLF_HOWLING.get(), 3.0F, 1.0F);
+
+            for (int i = 0; i < 6; i++) {
+                DivineDogBlackEntity dog = new DivineDogBlackEntity(this, true);
+                dog.setRitual(RITUAL_DURATION);
+                this.setRitualOffset(dog, i, 1.5D);
+                this.level().addFreshEntity(dog);
+            }
+            for (int i = 0; i < 6; i++) {
+                ToadEntity toad = new ToadEntity(JJKEntities.TOAD.get(), this, false, true);
+                toad.setRitual(RITUAL_DURATION);
+                this.setRitualOffset(toad, i, 0.0D);
+                this.level().addFreshEntity(toad);
+            }
+        }
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+
+        if (!this.isTame()) return;
+
+        LivingEntity owner = this.getOwner();
+
+        if (owner == null) return;
+
+        if (!owner.getCapability(TenShadowsDataHandler.INSTANCE).isPresent()) return;
+
+        ITenShadowsData src = this.getCapability(TenShadowsDataHandler.INSTANCE).resolve().orElseThrow();
+        ITenShadowsData dst = owner.getCapability(TenShadowsDataHandler.INSTANCE).resolve().orElseThrow();
+
+        dst.addAdapted(src.getAdapted());
+        dst.addAdapting(src.getAdapting());
+    }
+
+    // public void onAdaptation() {
+    //     this.healing = this.getHealth() < this.getMaxHealth();
+    // }
+
+    @Override
+    public void tick() {
+        super.tick();
+        //if (this.healing) {
+       //     this.healing = this.getHealth() < this.getMaxHealth();
+       // }
+        if (this.getHealth() != this.getMaxHealth()) {
+            this.heal(1.0F / 20);
+        }
+    }
+
+    @Override
+    public float getExperience() {
+        return Math.max(SorcererGrade.SPECIAL_GRADE.getRequiredExperience(), super.getExperience());
+    }
+
+    @Override
+    public float getMaxEnergy() {
+        return 999999.0F;
+    }
+
+    @Override
+    public @NotNull List<Ability> getCustom() {
+        return List.of(JJKAbilities.WHEEL.get());
+    }
+
+    @Override
+    public Summon<?> getAbility() {
+        return JJKAbilities.MAHORAGA.get();
+    }
+}

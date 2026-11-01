@@ -1,0 +1,37 @@
+package radon.jujutsu_kaisen.ability.base;
+
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+
+public interface ITransformation {
+    enum Part {
+        HEAD,
+        RIGHT_ARM,
+        LEFT_ARM,
+        LEGS,
+        BODY;
+
+        public EquipmentSlot getSlot() {
+            return switch (this) {
+                case HEAD -> EquipmentSlot.HEAD;
+                case BODY, RIGHT_ARM, LEFT_ARM -> EquipmentSlot.CHEST;
+                case LEGS -> EquipmentSlot.LEGS;
+            };
+        }
+    }
+
+    default boolean requiresPuppet() {
+        return false;
+    }
+
+    boolean isReplacement();
+
+    Item getItem();
+
+    Part getBodyPart();
+
+    default float getSlimTranslation() {
+        return 0.0F;
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "exhaustion": 0.1,
+  "message_id": "jujutsu",
+  "scaling": "when_caused_by_living_non_player",
+  "bypasses_armor": false,
+  "bypasses_shield": true,
+  "bypasses_resistance": false,
+  "bypasses_effects": true
+}

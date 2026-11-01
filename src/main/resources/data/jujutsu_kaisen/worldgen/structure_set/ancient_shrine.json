@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "jujutsu_kaisen:ancient_shrine",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "salt": 192837465,
+    "spacing": 45,
+    "separation": 18,
+    "type": "minecraft:random_spread"
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "slash": {
+    "sounds": [
+      "jujutsu_kaisen:slash"
+    ]
+  },
+  "wheel": {
+    "sounds": [
+      "jujutsu_kaisen:wheel"
+    ]
+  },
+  "unlimited_void": {
+    "sounds": [
+      "jujutsu_kaisen:unlimited_void"
+    ]
+  },
+  "wolf_howling": {
+    "sounds": [
+      "jujutsu_kaisen:wolf_howling"
+    ]
+  },
+    "collapse": {
+    "sounds": [
+      "jujutsu_kaisen:collapse"
+    ]
+  },
+  "ratio_rule": {
+    "sounds": [
+      "jujutsu_kaisen:ratio_rule"
+    ]
+  },
+  "cursed_speech": {
+    "sounds": [
+      "jujutsu_kaisen:cursed_speech"
+    ]
+  },
+  "clap": {
+    "sounds": [
+      "jujutsu_kaisen:clap"
+    ]
+  },
+  "jacobs_charge": {
+    "sounds": [
+      "jujutsu_kaisen:jacobs_charge"
+    ]
+  },
+  "jacobs_strong_charge": {
+    "sounds": [
+      "jujutsu_kaisen:jacobs_strong_charge"
+    ]
+  },
+  "jacobs_fire": {
+    "sounds": [
+      "jujutsu_kaisen:jacobs_fire"
+    ]
+  },
+  "jacobs_strong_fire": {
+    "sounds": [
+      "jujutsu_kaisen:jacobs_strong_fire"
+    ]
+  },
+  "forest_spikes": {
+    "sounds": [
+      "jujutsu_kaisen:forest_spikes"
+    ]
+  },
+  "malevolent_shrine": {
+    "sounds": [
+      "jujutsu_kaisen:malevolent_shrine"
+    ]
+  },
+  "fire_arrow": {
+    "sounds": [
+      "jujutsu_kaisen:fire_arrow"
+    ]
+  },
+  "electricity": {
+    "sounds": [
+      "jujutsu_kaisen:electricity"
+    ]
+  },
+  "cleave": {
+    "sounds": [
+      "jujutsu_kaisen:cleave"
+    ]
+  },
+  "swallow": {
+    "sounds": [
+      "jujutsu_kaisen:swallow"
+    ]
+  },
+  "dash": {
+    "sounds": [
+      "jujutsu_kaisen:dash"
+    ]
+  },
+  "hollow_purple": {
+    "sounds": [
+      "jujutsu_kaisen:hollow_purple"
+    ]
+  },
+  "hollow_purple_explosion": {
+    "sounds": [
+      "jujutsu_kaisen:hollow_purple_explosion"
+    ]
+  },
+  "blue": {
+    "sounds": [
+      "jujutsu_kaisen:blue"
+    ]
+  },
+  "red_explosion": {
+    "sounds": [
+      "jujutsu_kaisen:red_explosion"
+    ]
+  },
+  "slam": {
+    "sounds": [
+      "jujutsu_kaisen:slam"
+    ]
+  },
+  "pure_love": {
+    "sounds": [
+      "jujutsu_kaisen:pure_love"
+    ]
+  },
+  "flame_explosion": {
+    "sounds": [
+      "jujutsu_kaisen:flame_explosion"
+    ]
+  },
+  "thump": {
+    "sounds": [
+      "jujutsu_kaisen:thump"
+    ]
+  },
+  "shoot": {
+    "sounds": [
+      "jujutsu_kaisen:shoot"
+    ]
+  },
+  "spark": {
+    "sounds": [
+      "jujutsu_kaisen:spark"
+    ]
+  }
+}

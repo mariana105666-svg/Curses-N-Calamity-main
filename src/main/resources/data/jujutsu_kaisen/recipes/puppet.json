@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "F": {
+      "tag": "jujutsu_kaisen:flesh"
+    },
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "I": {
+      "item": "minecraft:iron_bars"
+    },
+    "A": {
+      "item": "minecraft:armor_stand"
+    }
+  },
+  "pattern": [
+    "FEF",
+    "IAI",
+    "III"
+  ],
+  "result": {
+    "item": "jujutsu_kaisen:puppet"
+  }
+}
